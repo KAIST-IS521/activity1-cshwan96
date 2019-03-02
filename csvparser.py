@@ -3,7 +3,6 @@ state_record = 1
 state_field = 2
 state_escaped = 3
 state_non_escaped = 4
-state_escaped_out = 5
 
 def isTextdata(ch):
 	numCh = ord(ch)
