@@ -1,4 +1,3 @@
-state_undefined = 0
 state_record = 1
 state_field = 2
 state_escaped = 3
@@ -15,18 +14,14 @@ def isEscapedText(ch):
 class CsvParser():
 	def __init__(self):
 		self._state = state_record
-		self._line = 0
-		self._column = 0
-		self._row = 0
-		self._cursor = 0
 
 	def parse(self, instr, header = False):
 		parsed_csv = list()
 		instrlen = len(instr)
-
-		while self._cursor < instrlen:
-			cur_ch = instr[self._cursor]
-			self._cursor += 1
+		_cursor = 0
+		while _cursor < instrlen:
+			cur_ch = instr[_cursor]
+			_cursor += 1
 
 			if self._state == state_record:
 				# only state_record state append new rows to parsed_csv
@@ -39,7 +34,7 @@ class CsvParser():
 					cur_cell = ""
 				if cur_ch == ',':
 					self._state = state_field
-					parsed_csv[self._row].append("")
+					parsed_csv[-1].append("")
 
 			elif self._state == state_field:
 				# same as state_record except not append rows
@@ -50,7 +45,7 @@ class CsvParser():
 					self._state = state_escaped
 					cur_cell = ""
 				if cur_ch == ',':
-					parsed_csv[self._row].append("")
+					parsed_csv[-1].append("")
 
 			elif self._state == state_escaped:
 				# state for escaped : DQUOTE *(TEXTDATA / COMMA / CR / LF / 2DQUOTE) DQUOTE 
@@ -58,24 +53,21 @@ class CsvParser():
 					cur_cell += cur_ch
 				elif cur_ch == "\"":
 					# check for 2DQUOTE
-					if self._cursor < instrlen and instr[self._cursor] == "\"":
-						self._cursor += 1 # skip \"
+					if _cursor < instrlen and instr[_cursor] == "\"":
+						_cursor += 1 # skip \"
 						cur_cell += "\""
 						continue
 					# escape condition for state_escaped
-					elif self._cursor < instrlen:
-						nextCh = instr[self._cursor]
-						self._cursor += 1 # skip nextCh
+					elif _cursor < instrlen:
+						nextCh = instr[_cursor]
+						_cursor += 1 # skip nextCh
 						if nextCh == ",":
 							self._state = state_field
-							parsed_csv[self._row].append(cur_cell)
-							self._column += 1
-						elif (nextCh == "\r" and self._cursor < instrlen and instr[self._cursor] == "\n"):
-							self._cursor += 1 # skip \n
+							parsed_csv[-1].append(cur_cell)
+						elif (nextCh == "\r" and _cursor < instrlen and instr[_cursor] == "\n"):
+							_cursor += 1 # skip \n
 							self._state = state_record
-							parsed_csv[self._row].append(cur_cell)
-							self._row += 1
-							self._column = 0
+							parsed_csv[-1].append(cur_cell)
 						else:
 							continue
 				else:
@@ -86,22 +78,21 @@ class CsvParser():
 					cur_cell += cur_ch
 				elif cur_ch == ",":
 					self._state = state_field
-					self._column += 1
-					parsed_csv[self._row].append(cur_cell)
-				elif cur_ch == "\r" and self._cursor < instrlen and instr[self._cursor] == "\n":
-					self._cursor += 1 # skip \n
+					parsed_csv[-1].append(cur_cell)
+				elif cur_ch == "\r" and _cursor < instrlen and instr[_cursor] == "\n":
+					_cursor += 1 # skip \n
 					self._state = state_record
-					parsed_csv[self._row].append(cur_cell)
-					self._row += 1
-					self._column = 0
+					parsed_csv[-1].append(cur_cell)
 				else:
 					raise Exception("Non-textdata in non_escaped state")
 
 		if self._state == state_escaped:
-			assert cur_ch == "\""
-			parsed_csv[self._row].append(cur_cell)
+			if cur_ch != "\"":
+				raise Exception("End of file before closing quote")
+			parsed_csv[-1].append(cur_cell)
+
 
 		elif self._state == state_non_escaped:
-			parsed_csv[self._row].append(cur_cell)
+			parsed_csv[-1].append(cur_cell)
 
 		return parsed_csv
