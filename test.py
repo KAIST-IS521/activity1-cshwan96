@@ -12,10 +12,10 @@ def runTestCase():
 		lib_csv_reader = csv.reader(f)
 		
 		parser = CsvParser()
-		my_parsed_csv = parser.parse(plain)
+		
 		lib_parsed_csv = [x for x in lib_csv_reader]
+		my_parsed_csv = parser.parse(plain)
 		f.close()
-
 		test_result = True
 		for rowi in range(len(lib_parsed_csv)):
 			row = lib_parsed_csv[rowi]
@@ -25,5 +25,19 @@ def runTestCase():
 					break
 		print "%s : %s" % (filename, test_result)
 
+def runErrorCase():
+	import subprocess
+
+	testfiles = os.listdir("./errorcase/")
+	print "Testing errorcases : Total %d" % len(testfiles)
+	for filename in testfiles:
+		return_code = subprocess.call(["python", "./main.py", "./errorcase/" + filename, "1"])
+		if return_code == 1:
+			print "%s : Pass" % (filename)
+		else:
+			print "%s : Failed" % (filename)
+
 if __name__ == "__main__":
 	runTestCase()
+	print "----------------------------"
+	runErrorCase()
